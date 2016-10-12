@@ -1,5 +1,7 @@
 # Service Locator DNS
 
+[![Build Status](https://api.travis-ci.org/typesafehub/service-locator-dns.png?branch=master)](https://travis-ci.org/typesafehub/service-locator-dns)
+
 ## Introduction
 
 [DNS SRV](https://tools.ietf.org/html/rfc2782) lookups for [Akka](http://akka.io/) and [Lagom](http://www.lagomframework.com/) which therefore includes [Mesos/Marathon](https://mesosphere.github.io/marathon/), [Kubernetes](http://kubernetes.io/) and [Consul](https://www.consul.io/) usage. This project provides two libraries:

@@ -1,6 +1,9 @@
 name := "service-locator-dns"
 
+resolvers += Resolver.hajile
+
 libraryDependencies ++= Seq(
   Library.akkaDns,
-  Library.lagom
+  Library.akkaTestkit,
+  Library.scalaTest % "test"
 )

@@ -27,7 +27,7 @@ object Build extends AutoPlugin {
     scalariformSettings ++
     List(
       // Core settings
-      organization := "com.typesafe.lightbend",
+      organization := "com.lightbend",
       scalaVersion := "2.11.8",
       scalacOptions ++= List(
         "-unchecked",

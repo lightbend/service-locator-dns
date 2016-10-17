@@ -9,8 +9,10 @@ package com.lightbend.lagom.dns
 import com.lightbend.lagom.javadsl.api.ServiceLocator
 import play.api.{ Configuration, Environment, Mode }
 import play.api.inject.{ Binding, Module }
-
 import javax.inject.Singleton
+
+import play.api.libs.concurrent.Akka
+import com.lightbend.dns.locator.{ ServiceLocator => ServiceLocatorService }
 
 /**
  * This module binds the ServiceLocator interface from Lagom to the `DnsServiceLocator`
@@ -21,7 +23,10 @@ class ServiceLocatorModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] =
     if (environment.mode == Mode.Prod)
-      Seq(bind[ServiceLocator].to[DnsServiceLocator].in[Singleton])
+      Seq(
+        bind[ServiceLocator].to[DnsServiceLocator].in[Singleton],
+        Akka.bindingOf[ServiceLocatorService]("ServiceLocatorService")
+      )
     else
       Seq.empty
 }

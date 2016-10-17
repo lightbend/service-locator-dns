@@ -73,6 +73,12 @@ object ServiceLocator {
 
 /**
  * A service locator that can get all addresses for a service using DNS SRV lookups.
+ * When considering DNS SRV we ignore priority and weight, sd they appear pretty useless
+ * for distributing across service instances as the information is often static in nature.
+ * If this turns out not to be the case though then we could certainly consider them.
+ * We also avoid caching requests at the level of this actor as the underlying DNS
+ * resolver will cache heavily for us. Again though, caching could be introduced at this
+ * actor's level if we find that it is required.
  */
 class ServiceLocator extends Actor with ActorSettings with ActorLogging {
 
@@ -91,10 +97,12 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
       resolve(name, resolveOne = false)
 
     case rc: RequestContext =>
-      // TODO: Attend to priority and weight, although they appear pretty useless
       // When we return just one address then we randomize which of the candidates to return
-      val srvFrom = if (rc.resolveOne && rc.srv.nonEmpty) random.nextInt(rc.srv.size) else 0
-      val srvSize = if (rc.resolveOne && rc.srv.nonEmpty) 1 else rc.srv.size
+      val (srvFrom, srvSize) =
+        if (rc.resolveOne && rc.srv.nonEmpty)
+          (random.nextInt(rc.srv.size), 1)
+        else
+          (0, rc.srv.size)
       import context.dispatcher
       val resolutions =
         rc.srv
@@ -136,7 +144,6 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
   }
 
   private def resolve(name: String, resolveOne: Boolean): Unit = {
-    // TODO: Implement request level caching
     log.debug("Resolving: {}", name)
     val matchedName = matchName(name, settings.nameTranslators)
     matchedName.foreach { mn =>

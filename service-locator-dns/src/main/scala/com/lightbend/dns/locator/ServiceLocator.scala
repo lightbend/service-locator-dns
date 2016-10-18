@@ -68,7 +68,7 @@ object ServiceLocator {
     }
 
   private[locator] def protocolFromName(name: String): String =
-    name.dropWhile(_ != '.').drop(1).takeWhile(_ != '.').drop(1)
+    name.iterator.dropWhile(_ != '.').drop(1).takeWhile(_ != '.').drop(1).mkString
 }
 
 /**

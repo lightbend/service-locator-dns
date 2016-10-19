@@ -32,7 +32,7 @@ object ServiceLocator {
    * per RFC 2782. Only one of the addresses within the highest priority and randomized across weight
    * will be returned.
    */
-  case class GetAddress(name: String)
+  final case class GetAddress(name: String)
 
   /**
    * Get one or more addresses given a service name. Names are translated as per [[GetAddress]].
@@ -40,32 +40,39 @@ object ServiceLocator {
    * An [[Addresses]] object will be replied with addresses sorted by priority and weight, as
    * per RFC 2782.
    */
-  case class GetAddresses(name: String)
+  final case class GetAddresses(name: String)
 
   /**
    * A sequence of ServiceAddress objects are the reply, which may of course be empty.
    */
-  case class Addresses(addresses: Seq[ServiceAddress])
+  sealed abstract case class Addresses(addresses: Seq[ServiceAddress])
+  object Addresses {
+    private val empty: Addresses = new Addresses(Nil) {}
+
+    def apply(addresses: Seq[ServiceAddress]): Addresses =
+      if (addresses.nonEmpty) new Addresses(addresses) {}
+      else empty
+  }
 
   /**
    * Used within replies.
    */
-  case class ServiceAddress(protocol: String, host: String, port: Int)
+  final case class ServiceAddress(protocol: String, host: String, port: Int)
 
-  private[locator] case class RequestContext(replyTo: ActorRef, resolveOne: Boolean, srv: Seq[SRVRecord])
+  private[locator] final case class RequestContext(replyTo: ActorRef, resolveOne: Boolean, srv: Seq[SRVRecord])
 
-  private[locator] case class ReplyContext(resolutions: Seq[(Dns.Resolved, SRVRecord)], rc: RequestContext)
+  private[locator] final case class ReplyContext(resolutions: Seq[(Dns.Resolved, SRVRecord)], rc: RequestContext)
 
   @tailrec
   private[locator] def matchName(name: String, nameTranslators: Seq[(Regex, String)]): Option[String] =
-    nameTranslators.headOption match {
-      case Some((r, s)) =>
+    nameTranslators match {
+      case (r, s) +: tail =>
         val matcher = r.pattern.matcher(name)
         if (matcher.matches())
           Some(matcher.replaceAll(s))
         else
-          matchName(name, nameTranslators.tail)
-      case None => None
+          matchName(name, tail)
+      case _ => None
     }
 
   private[locator] def protocolFromName(name: String): String =
@@ -131,15 +138,15 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
 
     case iobe: IndexOutOfBoundsException =>
       log.error("Could not substitute the service name with the name translator {}", iobe.getMessage)
-      sender() ! Addresses(List.empty)
+      sender() ! Addresses(Nil)
 
     case cce: ClassCastException =>
       log.debug("Bad resolution - is this a properly formed SRV lookup of the form '_service._proto.some.domain'? {}", cce.getMessage)
-      sender() ! Addresses(List.empty)
+      sender() ! Addresses(Nil)
 
     case ate: AskTimeoutException =>
       log.debug("Timed out on resolving an SRV record: {}", ate.getMessage)
-      sender() ! Addresses(List.empty)
+      sender() ! Addresses(Nil)
   }
 
   private def resolve(name: String, resolveOne: Boolean): Unit = {
@@ -155,6 +162,6 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
         .pipeTo(self)
     }
     if (matchedName.isEmpty)
-      sender() ! Addresses(List.empty)
+      sender() ! Addresses(Nil)
   }
 }

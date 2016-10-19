@@ -16,9 +16,13 @@ import ru.smslv.akka.dns.raw.SRVRecord
 
 import scala.annotation.tailrec
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 object ServiceLocator {
+
+  val Name = "DnsServiceLocator"
 
   def props: Props =
     Props(new ServiceLocator)
@@ -97,10 +101,10 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
 
   override def receive: Receive = {
     case GetAddress(name) =>
-      resolve(name, resolveOne = true)
+      resolveSrv(name, resolveOne = true)
 
     case GetAddresses(name) =>
-      resolve(name, resolveOne = false)
+      resolveSrv(name, resolveOne = false)
 
     case rc: RequestContext =>
       // When we return just one address then we randomize which of the candidates to return
@@ -114,10 +118,7 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
         rc.srv
           .slice(srvFrom, srvFrom + srvSize)
           .map { srv =>
-            dns
-              .ask(Dns.Resolve(srv.target))(settings.resolveTimeout)
-              .mapTo[Dns.Resolved]
-              .map(_ -> srv)
+            resolveDns(srv.target).map(_ -> srv)
           }
       Future
         .sequence(resolutions)
@@ -125,6 +126,7 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
         .pipeTo(self)
 
     case ReplyContext(resolutions, rc) =>
+      log.debug("Resolved: {}", resolutions)
       val addresses =
         resolutions
           .flatMap {
@@ -135,33 +137,74 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
                 resolved.ipv6.map(host => ServiceAddress(protocol, host.getHostAddress, port))
           }
       rc.replyTo ! Addresses(addresses)
-
-    case iobe: IndexOutOfBoundsException =>
-      log.error("Could not substitute the service name with the name translator {}", iobe.getMessage)
-      sender() ! Addresses(Nil)
-
-    case cce: ClassCastException =>
-      log.debug("Bad resolution - is this a properly formed SRV lookup of the form '_service._proto.some.domain'? {}", cce.getMessage)
-      sender() ! Addresses(Nil)
-
-    case ate: AskTimeoutException =>
-      log.debug("Timed out on resolving an SRV record: {}", ate.getMessage)
-      sender() ! Addresses(Nil)
   }
 
-  private def resolve(name: String, resolveOne: Boolean): Unit = {
+  private def resolveSrv(name: String, resolveOne: Boolean): Unit = {
     log.debug("Resolving: {}", name)
     val matchedName = matchName(name, settings.nameTranslators)
     matchedName.foreach { mn =>
       val replyTo = sender()
       import context.dispatcher
-      dns
-        .ask(Dns.Resolve(mn))(settings.resolveTimeout)
-        .mapTo[SrvResolved]
+      resolveSrvOnce(mn, settings.resolveTimeout1)
+        .recoverWith {
+          case _: AskTimeoutException =>
+            resolveSrvOnce(mn, settings.resolveTimeout1)
+              .recoverWith {
+                case _: AskTimeoutException =>
+                  resolveSrvOnce(mn, settings.resolveTimeout2)
+              }
+        }
+        .recover {
+          case iobe: IndexOutOfBoundsException =>
+            log.error("Could not substitute the service name with the name translator {}", iobe.getMessage)
+            SrvResolved(mn, Nil)
+
+          case ate: AskTimeoutException =>
+            log.debug("Timed out querying DNS SRV for {}", name)
+            SrvResolved(mn, Nil)
+
+          case NonFatal(e) =>
+            log.error(e, "Unexpected error when resolving an SRV record")
+            SrvResolved(mn, Nil)
+        }
         .map(resolved => RequestContext(replyTo, resolveOne, resolved.srv))
         .pipeTo(self)
     }
     if (matchedName.isEmpty)
       sender() ! Addresses(Nil)
+  }
+
+  private def resolveSrvOnce(name: String, resolveTimeout: FiniteDuration): Future[SrvResolved] = {
+    import context.dispatcher
+    dns
+      .ask(Dns.Resolve(name))(resolveTimeout)
+      .map {
+        case srvResolved: SrvResolved => srvResolved
+        case _: Dns.Resolved          => SrvResolved(name, Nil)
+      }
+  }
+
+  private def resolveDns(name: String): Future[Dns.Resolved] = {
+    import context.dispatcher
+    dns
+      .ask(Dns.Resolve(name))(settings.resolveTimeout1)
+      .recoverWith {
+        case _: AskTimeoutException =>
+          dns.ask(Dns.Resolve(name))(settings.resolveTimeout1)
+            .recoverWith {
+              case _: AskTimeoutException =>
+                dns.ask(Dns.Resolve(name))(settings.resolveTimeout2)
+            }
+      }
+      .mapTo[Dns.Resolved]
+      .recover {
+        case ate: AskTimeoutException =>
+          log.debug("Timed out querying DNS for {}", name)
+          Dns.Resolved(name, Nil)
+
+        case NonFatal(e) =>
+          log.error(e, "Unexpected error when resolving an DNS record")
+          Dns.Resolved(name, Nil)
+      }
   }
 }

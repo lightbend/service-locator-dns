@@ -39,7 +39,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       val requestor = TestProbe()
 
-      requestor.send(serviceLocator, ServiceLocator.GetAddresses("some-service"))
+      requestor.send(serviceLocator, ServiceLocator.GetAddresses("_some-service._tcp.marathon.mesos"))
 
       dnsProbe.expectMsg(Dns.Resolve("_some-service._tcp.marathon.mesos"))
       val srv1 = SRVRecord("_some-service._tcp.marathon.mesos", 3600, 0, 0, 1000, "some-service-host1.marathon.mesos")
@@ -67,7 +67,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       val requestor = TestProbe()
 
-      requestor.send(serviceLocator, ServiceLocator.GetAddress("some-service"))
+      requestor.send(serviceLocator, ServiceLocator.GetAddress("_some-service._tcp.marathon.mesos"))
 
       dnsProbe.expectMsg(Dns.Resolve("_some-service._tcp.marathon.mesos"))
       val srv1 = SRVRecord("_some-service._tcp.marathon.mesos", 3600, 0, 0, 1000, "some-service-host1.marathon.mesos")
@@ -91,7 +91,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       val requestor = TestProbe()
 
-      requestor.send(serviceLocator, ServiceLocator.GetAddress("some-service"))
+      requestor.send(serviceLocator, ServiceLocator.GetAddress("_some-service._tcp.marathon.mesos"))
 
       dnsProbe.expectMsg(Dns.Resolve("_some-service._tcp.marathon.mesos"))
       dnsProbe.sender() ! SrvResolved("some-service", List.empty)
@@ -107,7 +107,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       val requestor = TestProbe()
 
-      requestor.send(serviceLocator, ServiceLocator.GetAddress("some-service"))
+      requestor.send(serviceLocator, ServiceLocator.GetAddress("_some-service._tcp.marathon.mesos"))
 
       dnsProbe.expectMsg(Dns.Resolve("_some-service._tcp.marathon.mesos"))
       val srv1 = SRVRecord("_some-service._tcp.marathon.mesos", 3600, 0, 0, 1000, "some-service-host1.marathon.mesos")
@@ -118,6 +118,40 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       dnsProbe.expectNoMsg(500.millis)
 
       requestor.expectMsg(Addresses(Seq.empty))
+    }
+
+    "Fail to resolve a service to 1 address given an error on the SRV resolution" in {
+      val dnsProbe = TestProbe()
+      val serviceLocator = system.actorOf(Props(new TestServiceLocator(dnsProbe)))
+
+      val requestor = TestProbe()
+
+      requestor.send(serviceLocator, ServiceLocator.GetAddress("_some-service._tcp.marathon.mesos"))
+
+      dnsProbe.expectMsg(Dns.Resolve("_some-service._tcp.marathon.mesos"))
+      dnsProbe.sender() ! "some stupid reply"
+      dnsProbe.expectNoMsg(500.millis)
+
+      requestor.expectMsg(Addresses(List.empty))
+    }
+
+    "Fail to resolve a service to 1 address given an error on the DNS resolution of a successful SRV lookup" in {
+      val dnsProbe = TestProbe()
+      val serviceLocator = system.actorOf(Props(new TestServiceLocator(dnsProbe)))
+
+      val requestor = TestProbe()
+
+      requestor.send(serviceLocator, ServiceLocator.GetAddress("_some-service._tcp.marathon.mesos"))
+
+      dnsProbe.expectMsg(Dns.Resolve("_some-service._tcp.marathon.mesos"))
+      val srv1 = SRVRecord("_some-service._tcp.marathon.mesos", 3600, 0, 0, 1000, "some-service-host1.marathon.mesos")
+      dnsProbe.sender() ! SrvResolved("some-service", List(srv1))
+
+      dnsProbe.expectMsg(Dns.Resolve("some-service-host1.marathon.mesos"))
+      dnsProbe.sender() ! "some stupid reply"
+      dnsProbe.expectNoMsg(500.millis)
+
+      requestor.expectMsg(Addresses(List.empty))
     }
   }
 

@@ -6,6 +6,8 @@
 
 package com.lightbend.dns.locator
 
+import java.util.concurrent.ThreadLocalRandom
+
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.io.AsyncDnsResolver.SrvResolved
 import akka.io.{ Dns, IO }
@@ -14,7 +16,6 @@ import ru.smslv.akka.dns.raw.SRVRecord
 
 import scala.annotation.tailrec
 import scala.concurrent.Future
-import scala.util.Random
 import scala.util.matching.Regex
 
 object ServiceLocator {
@@ -87,8 +88,6 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
   private val _dns = IO(Dns)(context.system)
   protected def dns: ActorRef = _dns
 
-  private val random = new Random()
-
   override def receive: Receive = {
     case GetAddress(name) =>
       resolve(name, resolveOne = true)
@@ -100,7 +99,7 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
       // When we return just one address then we randomize which of the candidates to return
       val (srvFrom, srvSize) =
         if (rc.resolveOne && rc.srv.nonEmpty)
-          (random.nextInt(rc.srv.size), 1)
+          (ThreadLocalRandom.current.nextInt(rc.srv.size), 1)
         else
           (0, rc.srv.size)
       import context.dispatcher

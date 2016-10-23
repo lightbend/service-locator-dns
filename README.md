@@ -4,7 +4,7 @@
 
 ## Motivation
 
-DNS SRV is a proposed standard in order to support locating services over the DNS protocol. Service discovery backends commonly offer DNS SRV as a protocol, and so this project leverages that capability.
+DNS SRV is specification that describes how to locate services over the DNS protocol. Service discovery backends commonly offer DNS SRV as a protocol, and so this project leverages that capability.
 
 ## Introduction
 
@@ -17,6 +17,10 @@ This project uses the wonderful [akka-dns](https://github.com/ilya-epifanov/akka
 
 ## Usage
 
+The service locator is written using Akka and can be used directly as via its Actor. Alternatively Lagom can be configured to use this project's service locator with no additional coding for your project.
+
+### Pure Akka usage
+
 You'll need a resolver for akka-dns:
 
 ```scala
@@ -26,18 +30,37 @@ resolvers += bintrayRepo("hajile", "maven")
 For pure Akka based usage (without Lagom):
 
 ```scala
-libraryDependencies += "com.lightbend" %% "service-locator-dns" % "0.1.0"
+libraryDependencies += "com.lightbend" %% "service-locator-dns" % "1.0.0"
 ```
+
+An example:
+
+```scala
+  // Requisite import
+  import com.lightbend.dns.locator.ServiceLocator
+  
+  // Create a service locator
+  val serviceLocator = system.actorOf(ServiceLocator.props, ServiceLocator.Name)
+  
+  // Send a request to get addresses. Expect a `ServiceLocator.Addresses` reply.
+  serviceLocator ! ServiceLocator.GetAddresses("_some-service._tcp.marathon.mesos")
+```
+
+### Lagom usage
 
 Alternatively, when using from Lagom:
 
 ```scala
-libraryDependencies += "com.lightbend" %% "lagom-service-locator-dns" % "0.1.0"
+libraryDependencies += "com.lightbend" %% "lagom-service-locator-dns" % "1.0.0"
 ```
 
-Your platform will require differing "transformers" that will translate a service name
+Simply adding the above dependency to a Lagom project should be sufficient. There is a `ServiceLocatorModule` that will be automatically discovered by the Lagom environment. All of your Lagom service locator calls will automatically route via the service locator implementation that this project provides.
+
+## Advanced configuration
+
+Your platform may require differing "transformers" that will translate a service name
 into a DNS SRV name to be looked up. Here is the Typesafe config declaration to be 
-considered:
+considered in its entirety.
 
 ```
 service-locator-dns {
@@ -66,31 +89,22 @@ service-locator-dns {
   # You can of course have multiple translators though and statically declare the translations as
   # your service's configuration (you'll be supplying environment specific configuration quite typically
   # anyway...), and thus keep your service names nice and clean.
+  #
+  # By default though, we don't translate much i.e. we let it all pass through and put the onus on the
+  # client to specify the right service name.
   name-translators = [
     {
-      "^.*$" = "_$0._tcp.marathon.mesos"
+      "^.*$" = "$0"
     }
   ]
   name-translators = ${?SERVICE_LOCATOR_DNS_NAME_TRANSLATORS}
 
-  # The amount of time to wait for a DNS resolution to occur
-  resolve-timeout = 5 seconds
+  # The amount of time to wait for a DNS resolution to occur for the first and second lookups of a given
+  # name.
+  resolve-timeout1 = 1 second
+
+  # The amount of time to wait for a DNS resolution to occur for the third lookup of a given
+  # name.
+  resolve-timeout2 = 2 seconds
 }
 ```
-
-## DNS Resolvers
-
-The DNS resolver must be told where to resolve from. Here's a sample Typesafe config entry:
-
-```scala
-akka.io.dns {
-  resolver = async-dns
-  async-dns {
-    nameservers = ["8.8.8.8", "8.8.4.4"]
-  }
-}
-```
-
-NOTE: There is [an issue on akka-dns](https://github.com/ilya-epifanov/akka-dns/issues/2) in 
-order to read the `/etc/resolv.conf` file by default. This should then obviate the need
-to declare the above configuration.

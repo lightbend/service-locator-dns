@@ -10,7 +10,7 @@ import sbt._
 object Version {
   // OSS
   val akka      = "2.4.10"
-  val akkaDns   = "2.4.1-M1"
+  val akkaDns   = "2.4.2-M1"
   val lagom     = "1.1.0"
   val scalaTest = "3.0.0"
 }

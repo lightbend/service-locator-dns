@@ -33,7 +33,7 @@ class DnsServiceLocator @Inject() (
 
   private def locateAsScala(name: String): Future[Option[URI]] =
     serviceLocatorService
-      .ask(ServiceLocatorService.GetAddress(name))(settings.resolveTimeout)
+      .ask(ServiceLocatorService.GetAddress(name))(settings.resolveTimeout1 + settings.resolveTimeout1 + settings.resolveTimeout2)
       .mapTo[ServiceLocatorService.Addresses]
       .map {
         case ServiceLocatorService.Addresses(addresses) =>

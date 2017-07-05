@@ -140,8 +140,8 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
   }
 
   private def resolveSrv(name: String, resolveOne: Boolean): Unit = {
-    log.debug("Resolving: {}", name)
     val matchedName = matchName(name, settings.nameTranslators)
+    log.debug("Resolving: {} -> {}", name, matchedName)
     matchedName.foreach { mn =>
       val replyTo = sender()
       import context.dispatcher

@@ -20,10 +20,17 @@ object Settings extends ExtensionKey[Settings]
  * Settings for the service locator.
  */
 class Settings(system: ExtendedActorSystem) extends Extension {
-
   val nameTranslators: Seq[(Regex, String)] =
     serviceLocatorDns
       .getObjectList("name-translators")
+      .toList
+      .flatMap(_.toMap.map {
+        case (k, v) => k.r -> v.unwrapped().toString
+      })
+
+  val srvTranslators: Seq[(Regex, String)] =
+    serviceLocatorDns
+      .getObjectList("srv-translators")
       .toList
       .flatMap(_.toMap.map {
         case (k, v) => k.r -> v.unwrapped().toString

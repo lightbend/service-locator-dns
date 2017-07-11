@@ -30,7 +30,19 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   import ServiceLocatorSpec._
 
-  implicit val system = ActorSystem("ServiceLocatorSpec", ConfigFactory.load())
+  implicit val system = ActorSystem(
+    "ServiceLocatorSpec",
+    ConfigFactory.parseString(
+      s"""
+         |service-locator-dns {
+         |  srv-translators = [
+         |    { "^_test-srv-translator[.]_tcp[.](.+)" = "_test-srv-translator._http.$$1" },
+         |    { "^.*$$" = "$$0" }
+         |  ]
+         |}
+       """.stripMargin
+    )
+  )
 
   "A DNS service locator" should {
     "resolve a service to 2 addresses" in {
@@ -153,6 +165,28 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       requestor.expectMsg(Addresses(List.empty))
     }
+
+    "Translate SRV records after resolving" in {
+      val dnsProbe = TestProbe()
+      val serviceLocator = system.actorOf(Props(new TestServiceLocator(dnsProbe)))
+
+      val requestor = TestProbe()
+
+      requestor.send(serviceLocator, ServiceLocator.GetAddress("_test-srv-translator._tcp.marathon.mesos"))
+
+      dnsProbe.expectMsg(Dns.Resolve("_test-srv-translator._tcp.marathon.mesos"))
+      val srv = SRVRecord("_test-srv-translator._tcp.marathon.mesos", 3600, 0, 0, 1000, "some-service-host.marathon.mesos")
+      dnsProbe.reply(SrvResolved("some-service", List(srv)))
+
+      dnsProbe.expectMsgPF() {
+        case Dns.Resolve("some-service-host.marathon.mesos") =>
+      }
+
+      dnsProbe.reply(Dns.Resolved("some-service-host.marathon.mesos", List(InetAddress.getByName("127.0.0.1"))))
+      dnsProbe.expectNoMsg(500.millis)
+
+      requestor.expectMsg(Addresses(Seq(ServiceAddress("http", "127.0.0.1", 1000))))
+    }
   }
 
   override protected def afterAll(): Unit = {
@@ -168,14 +202,14 @@ class ServiceLocatorStaticSpec extends WordSpec with Matchers {
       val nameTranslators = Seq("^.*$".r -> "_$0._tcp.marathon.mesos")
       val name = "some-service"
       val expected = Some("_some-service._tcp.marathon.mesos")
-      ServiceLocator.matchName(name, nameTranslators) should be(expected)
+      ServiceLocator.matchTranslation(name, nameTranslators) should be(expected)
     }
 
     "k8s replace all" in {
       val nameTranslators = Seq("(.*)-(.*)-(.*)-(.*)".r -> "_$3._$4.$2.$1.svc.cluster.local")
       val name = "customers-cassandra-native-tcp"
       val expected = Some("_native._tcp.cassandra.customers.svc.cluster.local")
-      ServiceLocator.matchName(name, nameTranslators) should be(expected)
+      ServiceLocator.matchTranslation(name, nameTranslators) should be(expected)
     }
 
     "k8s replace all of the second translator" in {
@@ -186,7 +220,7 @@ class ServiceLocatorStaticSpec extends WordSpec with Matchers {
         )
       val name = "customers-cassandra-native"
       val expected = Some("_native._udp.cassandra.customers.svc.cluster.local")
-      ServiceLocator.matchName(name, nameTranslators) should be(expected)
+      ServiceLocator.matchTranslation(name, nameTranslators) should be(expected)
     }
 
     "k8s not find a match in any of the translators" in {
@@ -197,7 +231,7 @@ class ServiceLocatorStaticSpec extends WordSpec with Matchers {
         )
       val name = "cannot be matched"
       val expected = None
-      ServiceLocator.matchName(name, nameTranslators) should be(expected)
+      ServiceLocator.matchTranslation(name, nameTranslators) should be(expected)
     }
   }
 

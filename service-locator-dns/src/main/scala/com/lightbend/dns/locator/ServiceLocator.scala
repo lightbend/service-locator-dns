@@ -68,14 +68,14 @@ object ServiceLocator {
   private[locator] final case class ReplyContext(resolutions: Seq[(Dns.Resolved, SRVRecord)], rc: RequestContext)
 
   @tailrec
-  private[locator] def matchName(name: String, nameTranslators: Seq[(Regex, String)]): Option[String] =
-    nameTranslators match {
+  private[locator] def matchTranslation(name: String, translators: Seq[(Regex, String)]): Option[String] =
+    translators match {
       case (r, s) +: tail =>
         val matcher = r.pattern.matcher(name)
         if (matcher.matches())
           Some(matcher.replaceAll(s))
         else
-          matchName(name, tail)
+          matchTranslation(name, tail)
       case _ => None
     }
 
@@ -141,8 +141,11 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
 
   private def resolveSrv(name: String, resolveOne: Boolean): Unit = {
     log.debug("Resolving: {}", name)
-    val matchedName = matchName(name, settings.nameTranslators)
+    val matchedName = matchTranslation(name, settings.nameTranslators)
     matchedName.foreach { mn =>
+      if (name != mn)
+        log.debug("Translated {} to {}", name, mn)
+
       val replyTo = sender()
       import context.dispatcher
       resolveSrvOnce(mn, settings.resolveTimeout1)
@@ -167,7 +170,21 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
             log.error(e, "Unexpected error when resolving an SRV record")
             SrvResolved(mn, Nil)
         }
-        .map(resolved => RequestContext(replyTo, resolveOne, resolved.srv))
+        .map(resolved =>
+          RequestContext(
+            replyTo,
+            resolveOne,
+            resolved.srv.map { record =>
+              matchTranslation(record.name, settings.srvTranslators) match {
+                case Some(newName) if name != newName =>
+                  log.debug("Translated {} to {}", record.name, newName)
+                  record.copy(name = newName)
+                case _ =>
+                  record
+              }
+            }
+          )
+        )
         .pipeTo(self)
     }
     if (matchedName.isEmpty)

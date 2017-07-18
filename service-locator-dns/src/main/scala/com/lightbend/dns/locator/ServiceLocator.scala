@@ -61,7 +61,7 @@ object ServiceLocator {
   /**
    * Used within replies.
    */
-  final case class ServiceAddress(protocol: String, host: String, port: Int)
+  final case class ServiceAddress(protocol: String, hostname: String, host: String, port: Int)
 
   private[locator] final case class RequestContext(replyTo: ActorRef, resolveOne: Boolean, srv: Seq[SRVRecord])
 
@@ -133,8 +133,8 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
             case (resolved, srv) =>
               val protocol = protocolFromName(srv.name)
               val port = srv.port
-              resolved.ipv4.map(host => ServiceAddress(protocol, host.getHostAddress, port)) ++
-                resolved.ipv6.map(host => ServiceAddress(protocol, host.getHostAddress, port))
+              resolved.ipv4.map(host => ServiceAddress(protocol, srv.target, host.getHostAddress, port)) ++
+                resolved.ipv6.map(host => ServiceAddress(protocol, srv.target, host.getHostAddress, port))
           }
       rc.replyTo ! Addresses(addresses)
   }

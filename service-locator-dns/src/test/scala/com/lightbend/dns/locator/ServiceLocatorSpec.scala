@@ -66,8 +66,8 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       requestor.expectMsg(
         Addresses(
           Seq(
-            ServiceAddress("tcp", "1.1.1.1", 1000),
-            ServiceAddress("tcp", "1.1.1.2", 1001)
+            ServiceAddress("tcp", "some-service-host1.marathon.mesos", "1.1.1.1", 1000),
+            ServiceAddress("tcp", "some-service-host2.marathon.mesos", "1.1.1.2", 1001)
           )
         )
       )
@@ -94,7 +94,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       dnsProbe.sender() ! Dns.Resolved(expectedHostname, List(InetAddress.getByName(expectedHost)))
       dnsProbe.expectNoMsg(500.millis)
 
-      requestor.expectMsg(Addresses(Seq(ServiceAddress("tcp", expectedHost, expectedPort))))
+      requestor.expectMsg(Addresses(Seq(ServiceAddress("tcp", expectedHostname, expectedHost, expectedPort))))
     }
 
     "Fail to resolve a service due to no srv resolution" in {
@@ -185,7 +185,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       dnsProbe.reply(Dns.Resolved("some-service-host.marathon.mesos", List(InetAddress.getByName("127.0.0.1"))))
       dnsProbe.expectNoMsg(500.millis)
 
-      requestor.expectMsg(Addresses(Seq(ServiceAddress("http", "127.0.0.1", 1000))))
+      requestor.expectMsg(Addresses(Seq(ServiceAddress("http", "some-service-host.marathon.mesos", "127.0.0.1", 1000))))
     }
   }
 

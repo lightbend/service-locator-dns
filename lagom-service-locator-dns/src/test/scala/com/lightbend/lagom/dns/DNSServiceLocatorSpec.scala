@@ -42,7 +42,7 @@ class DNSServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAl
       val service = serviceLocator.locate("some-service", Descriptor.Call.NONE).toScala.map(_.asScala)
 
       dnsServiceLocator.expectMsg(ServiceLocatorService.GetAddress("some-service"))
-      dnsServiceLocator.sender() ! ServiceLocatorService.Addresses(List(ServiceLocatorService.ServiceAddress("http", "127.0.0.1", 9000)))
+      dnsServiceLocator.sender() ! ServiceLocatorService.Addresses(List(ServiceLocatorService.ServiceAddress("http", "localhost", "127.0.0.1", 9000)))
 
       service.futureValue shouldBe Some(new URI("http://127.0.0.1:9000"))
     }

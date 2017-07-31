@@ -99,6 +99,22 @@ service-locator-dns {
   ]
   name-translators = ${?SERVICE_LOCATOR_DNS_NAME_TRANSLATORS}
 
+  # A list of translators - their order is significant. Translates the SRV lookup name for downstream processing by
+  # the library. The name will initially be looked up (after being passed through name-translators), and then the
+  # result will be mapped according to this translation table.
+  #
+  # For example, this entry will rewrite any queries starting with _api._tcp and ensuring they become _api._http
+  #
+  # "^_api[.]_tcp[.](.+)$" = "_api.http.$1",
+  #
+  # By default, we don't transluate i.e. we let it all pass through.
+  srv-translators = [
+    {
+      "^.*$" = "$0"
+    }
+  ]
+  srv-translators = ${?SERVICE_LOCATOR_DNS_SRV_TRANSLATORS}
+
   # The amount of time to wait for a DNS resolution to occur for the first and second lookups of a given
   # name.
   resolve-timeout1 = 1 second

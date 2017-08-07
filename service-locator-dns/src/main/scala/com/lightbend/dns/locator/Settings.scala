@@ -36,6 +36,8 @@ class Settings(system: ExtendedActorSystem) extends Extension {
         case (k, v) => k.r -> v.unwrapped().toString
       })
 
+  val routingPolicy = serviceLocatorDns.getString("routing-policy")
+
   val resolveTimeout1: FiniteDuration =
     duration(serviceLocatorDns, "resolve-timeout1")
 

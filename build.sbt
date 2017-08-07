@@ -12,4 +12,5 @@ lazy val lagomServiceLocatorDns = project
   .enablePlugins(AutomateHeaderPlugin)
 
 name := "root"
+
 publishArtifact := false

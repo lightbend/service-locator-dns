@@ -11,16 +11,17 @@ object Version {
   // OSS
   val akka      = "2.4.10"
   val akkaDns   = "2.4.2-M1"
-  val lagom     = "1.1.0"
+  val lagom     = "1.3.6"
   val scalaTest = "3.0.0"
 }
 
 object Library {
   // OSS
-  val akkaDns     = "ru.smslv.akka"       %% "akka-dns"          % Version.akkaDns
-  val akkaTestkit = "com.typesafe.akka"   %% "akka-testkit"      % Version.akka
-  val lagom       = "com.lightbend.lagom" %% "lagom-javadsl-api" % Version.lagom
-  val scalaTest   = "org.scalatest"       %% "scalatest"         % Version.scalaTest
+  val akkaDns     = "ru.smslv.akka"       %% "akka-dns"              % Version.akkaDns
+  val akkaTestkit = "com.typesafe.akka"   %% "akka-testkit"          % Version.akka
+  val lagom       = "com.lightbend.lagom" %% "lagom-scaladsl-api"    % Version.lagom
+  val lagomClient = "com.lightbend.lagom" %% "lagom-scaladsl-client" % Version.lagom
+  val scalaTest   = "org.scalatest"       %% "scalatest"             % Version.scalaTest
 }
 
 object Resolver {

@@ -7,50 +7,72 @@
 package com.lightbend.lagom.dns
 
 import java.net.URI
-import java.util.Optional
-import java.util.concurrent.CompletionStage
-import java.util.function.{ Function => JFunction }
-import javax.inject.{ Inject, Named }
+import java.util.concurrent.ThreadLocalRandom
+
+import scala.collection.concurrent.TrieMap
+
+import com.lightbend.lagom.scaladsl.client.CircuitBreakingServiceLocator
+import com.lightbend.lagom.scaladsl.api.{ Descriptor, ServiceLocator }
+import com.lightbend.dns.locator.{ Settings, ServiceLocator => ServiceLocatorService }
+import scala.concurrent.{ ExecutionContext, Future }
 
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
-import com.lightbend.lagom.javadsl.api.{ Descriptor, ServiceLocator }
-import com.lightbend.dns.locator.{ Settings, ServiceLocator => ServiceLocatorService }
-
-import scala.compat.java8.FutureConverters._
-import scala.compat.java8.OptionConverters._
-import scala.concurrent.{ ExecutionContext, Future }
+import com.lightbend.dns.locator.ServiceLocator.ServiceAddress
+import com.lightbend.lagom.internal.client.CircuitBreakers
 
 /**
  * DnsServiceLocator implements Lagom's ServiceLocator by using the DNS Service Locator service, which is an actor.
  */
-class DnsServiceLocator @Inject() (
-    @Named("ServiceLocatorService") serviceLocatorService: ActorRef,
+class DnsServiceLocator(serviceLocatorService: ActorRef,
     system: ActorSystem,
-    implicit val ec: ExecutionContext) extends ServiceLocator {
+    circuitBreakers: CircuitBreakers)(implicit ec: ExecutionContext) extends CircuitBreakingServiceLocator(circuitBreakers) {
 
-  val settings = Settings(system)
+  private val roundRobinIndexFor = TrieMap.empty[String, Int]
 
-  private def locateAsScala(name: String): Future[Option[URI]] =
+  private val locatorSettings = Settings(system)
+
+  private val routingPolicy = RoutingPolicy(locatorSettings.routingPolicy)
+
+  override def locate(name: String, serviceCall: Descriptor.Call[_, _]): Future[Option[URI]] =
     serviceLocatorService
-      .ask(ServiceLocatorService.GetAddress(name))(settings.resolveTimeout1 + settings.resolveTimeout1 + settings.resolveTimeout2)
+      .ask(ServiceLocatorService.GetAddress(name))(locatorSettings.resolveTimeout1 + locatorSettings.resolveTimeout1 + locatorSettings.resolveTimeout2)
       .mapTo[ServiceLocatorService.Addresses]
       .map {
-        case ServiceLocatorService.Addresses(addresses) =>
-          addresses
-            .headOption
-            .map(sa => new URI(sa.protocol, null, sa.host, sa.port, null, null, null))
+        case ServiceLocatorService.Addresses(addresses) if addresses.isEmpty =>
+          Option.empty[URI]
+
+        case ServiceLocatorService.Addresses(addresses) if addresses.length == 1 =>
+          pickFirst(addresses)
+
+        case ServiceLocatorService.Addresses(addresses) => routingPolicy match {
+          case First      => pickFirst(addresses)
+          case Random     => pickRandom(addresses)
+          case RoundRobin => pickRoundRobin(name, addresses)
+        }
       }
 
-  override def locate(name: String, serviceCall: Descriptor.Call[_, _]): CompletionStage[Optional[URI]] =
-    locateAsScala(name).map(_.asJava).toJava
+  private def toUri(sa: ServiceAddress) =
+    new URI(sa.protocol, null, sa.host, sa.port, null, null, null)
 
-  override def doWithService[T](name: String, serviceCall: Descriptor.Call[_, _], block: JFunction[URI, CompletionStage[T]]): CompletionStage[Optional[T]] =
-    locateAsScala(name).flatMap(uriOpt => {
-      uriOpt.fold(Future.successful(Optional.empty[T])) { uri =>
-        block.apply(uri)
-          .toScala
-          .map(v => Optional.of(v))
-      }
-    }).toJava
+  private[dns] def pickFirst(addresses: Seq[ServiceAddress]): Option[URI] =
+    addresses
+      .headOption
+      .map(toUri)
+
+  private[dns] def pickRandom(addresses: Seq[ServiceAddress]): Option[URI] =
+    Option(addresses.map(toUri)
+      .sorted
+      .apply(ThreadLocalRandom.current.nextInt(addresses.size - 1)))
+
+  private[dns] def pickRoundRobin(name: String, addresses: Seq[ServiceAddress]): Option[URI] = {
+    roundRobinIndexFor.putIfAbsent(name, 0)
+    val sortedAddresses = addresses.map(toUri).sorted
+    val currentIndex = roundRobinIndexFor(name)
+    val nextIndex =
+      if (sortedAddresses.size > currentIndex + 1) currentIndex + 1
+      else 0
+    roundRobinIndexFor.replace(name, nextIndex)
+    Option(sortedAddresses.apply(currentIndex))
+  }
 }

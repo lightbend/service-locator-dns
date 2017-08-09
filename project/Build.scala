@@ -5,9 +5,6 @@
  */
 
 import com.typesafe.sbt.SbtScalariform._
-import sbtrelease.ReleasePlugin.autoImport._
-import com.typesafe.sbt.SbtPgp.autoImport._
-import PgpKeys._
 import xerial.sbt.Sonatype.autoImport._
 import sbt._
 import sbt.Keys._
@@ -71,8 +68,6 @@ object Build extends AutoPlugin {
           )
       ),
       // Sonatype settings
-      sonatypeProfileName := "com.lightbend",
-      // Release settings
-      releasePublishArtifactsAction := publishSigned.value
+      sonatypeProfileName := "com.lightbend"
     )
 }

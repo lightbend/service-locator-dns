@@ -10,14 +10,12 @@ import sbt._
 object Version {
   // OSS
   val akka = "2.5.2"
-  val akkaDns = "2.4.2"
   val lagom = "1.3.6"
   val scalaTest = "3.0.0"
 }
 
 object Library {
   // OSS
-  val akkaDns = "ru.smslv.akka" %% "akka-dns" % Version.akkaDns
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % Version.akka
   val lagom = "com.lightbend.lagom" %% "lagom-scaladsl-api" % Version.lagom
   val lagomClient = "com.lightbend.lagom" %% "lagom-scaladsl-client" % Version.lagom

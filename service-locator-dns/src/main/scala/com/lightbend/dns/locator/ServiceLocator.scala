@@ -182,9 +182,7 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
                 case _ =>
                   record
               }
-            }
-          )
-        )
+            }))
         .pipeTo(self)
     }
     if (matchedName.isEmpty)

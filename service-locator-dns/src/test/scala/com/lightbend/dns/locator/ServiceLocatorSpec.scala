@@ -40,9 +40,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
          |    { "^.*$$" = "$$0" }
          |  ]
          |}
-       """.stripMargin
-    )
-  )
+       """.stripMargin))
 
   "A DNS service locator" should {
     "resolve a service to 2 addresses" in {
@@ -67,10 +65,7 @@ class ServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         Addresses(
           Seq(
             ServiceAddress("tcp", "some-service-host1.marathon.mesos", "1.1.1.1", 1000),
-            ServiceAddress("tcp", "some-service-host2.marathon.mesos", "1.1.1.2", 1001)
-          )
-        )
-      )
+            ServiceAddress("tcp", "some-service-host2.marathon.mesos", "1.1.1.2", 1001))))
     }
 
     "resolve a service to 1 address having requested just one" in {
@@ -216,8 +211,7 @@ class ServiceLocatorStaticSpec extends WordSpec with Matchers {
       val nameTranslators =
         Seq(
           "(.*)-(.*)-(.*)-(.*)".r -> "_$3._$4.$2.$1.svc.cluster.local",
-          "(.*)-(.*)-(.*)".r -> "_$3._udp.$2.$1.svc.cluster.local"
-        )
+          "(.*)-(.*)-(.*)".r -> "_$3._udp.$2.$1.svc.cluster.local")
       val name = "customers-cassandra-native"
       val expected = Some("_native._udp.cassandra.customers.svc.cluster.local")
       ServiceLocator.matchTranslation(name, nameTranslators) should be(expected)
@@ -227,8 +221,7 @@ class ServiceLocatorStaticSpec extends WordSpec with Matchers {
       val nameTranslators =
         Seq(
           "(.*)-(.*)-(.*)-(.*)".r -> "_$3._$4.$2.$1.svc.cluster.local",
-          "(.*)-(.*)-(.*)".r -> "_$3._udp.$2.$1.svc.cluster.local"
-        )
+          "(.*)-(.*)-(.*)".r -> "_$3._udp.$2.$1.svc.cluster.local")
       val name = "cannot be matched"
       val expected = None
       ServiceLocator.matchTranslation(name, nameTranslators) should be(expected)

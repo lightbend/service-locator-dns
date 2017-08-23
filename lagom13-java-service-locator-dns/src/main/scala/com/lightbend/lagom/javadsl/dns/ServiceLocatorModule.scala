@@ -4,7 +4,7 @@
  * or by any means without the express written permission of Typesafe, Inc.
  */
 
-package com.lightbend.lagom.dns
+package com.lightbend.lagom.javadsl.dns
 
 import com.lightbend.lagom.javadsl.api.ServiceLocator
 import play.api.{ Configuration, Environment, Mode }

@@ -4,6 +4,6 @@ resolvers += Resolver.hajile
 
 libraryDependencies ++= Seq(
   Library.akkaDns,
-  Library.akkaTestkit,
-  Library.scalaTest % "test"
+  Library.akkaTestkit % "test",
+  Library.scalaTest   % "test"
 )

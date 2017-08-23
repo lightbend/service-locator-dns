@@ -4,7 +4,7 @@
  * or by any means without the express written permission of Typesafe, Inc.
  */
 
-package com.lightbend.lagom.dns
+package com.lightbend.lagom.javadsl.dns
 
 import java.net.URI
 
@@ -21,10 +21,12 @@ import scala.compat.java8.OptionConverters._
 import play.api.inject.bind
 import com.lightbend.dns.locator.{ ServiceLocator => ServiceLocatorService }
 
-class DNSServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll with ScalaFutures {
+import scala.concurrent.ExecutionContextExecutor
 
-  implicit val system = ActorSystem("ServiceLocatorSpec", ConfigFactory.load())
-  implicit val dispatcher = system.dispatcher
+class DnsServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll with ScalaFutures {
+
+  implicit val system: ActorSystem = ActorSystem("ServiceLocatorSpec", ConfigFactory.load())
+  implicit val dispatcher: ExecutionContextExecutor = system.dispatcher
 
   "The DNS service locator" should {
 

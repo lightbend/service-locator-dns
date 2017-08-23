@@ -46,15 +46,35 @@ An example:
   serviceLocator ! ServiceLocator.GetAddresses("_some-service._tcp.marathon.mesos")
 ```
 
-### Lagom usage
+### Lagom Java usage
 
-Alternatively, when using from Lagom:
+Alternatively, when using from Lagom and Java:
 
 ```scala
-libraryDependencies += "com.lightbend" %% "lagom-service-locator-dns" % "1.0.0"
+libraryDependencies += "com.lightbend" %% "lagom13-java-service-locator-dns" % "2.0.0"
 ```
 
 Simply adding the above dependency to a Lagom project should be sufficient. There is a `ServiceLocatorModule` that will be automatically discovered by the Lagom environment. All of your Lagom service locator calls will automatically route via the service locator implementation that this project provides.
+
+### Lagom Scala usage
+
+Alternatively, when using from Lagom and Scala:
+
+```scala
+libraryDependencies += "com.lightbend" %% "lagom13-scala-service-locator-dns" % "2.0.0"
+```
+
+When declaring your Lagom application you will also be required to mix in the `com.lightbend.lagom.scaladsl.dns.DnsServiceLocatorComponents` trait:
+
+```scala
+import com.lightbend.lagom.scaladsl.dns.DnsServiceLocatorComponents  
+...
+
+class LagomLoader extends LagomApplicationLoader {
+  override def load(context: LagomApplicationContext) = 
+    new MyLagomApplication(context) with DnsServiceLocatorComponents
+...
+```
 
 ## Advanced configuration
 

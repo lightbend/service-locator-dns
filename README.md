@@ -30,7 +30,7 @@ resolvers += bintrayRepo("hajile", "maven")
 For pure Akka based usage (without Lagom):
 
 ```scala
-libraryDependencies += "com.lightbend" %% "service-locator-dns" % "1.0.0"
+libraryDependencies += "com.lightbend" %% "service-locator-dns" % "2.0.0"
 ```
 
 An example:

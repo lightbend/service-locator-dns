@@ -17,18 +17,29 @@ import org.scalatest._
 import com.lightbend.dns.locator.{ ServiceLocator => ServiceLocatorService }
 import com.lightbend.lagom.internal.client.{ CircuitBreakerConfig, CircuitBreakerMetricsProviderImpl, CircuitBreakers }
 import com.lightbend.lagom.internal.spi.CircuitBreakerMetricsProvider
-import play.api.{ ApplicationLoader, BuiltInComponentsFromContext, Environment }
+import com.lightbend.lagom.scaladsl.api.{ Descriptor, Service }
+import com.lightbend.lagom.scaladsl.server.{ LagomApplication, LagomApplicationContext }
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
 
 import scala.concurrent.ExecutionContext
+
+object DnsServiceLocatorSpec {
+  class DummyService extends Service {
+    override def descriptor: Descriptor = {
+      import Service._
+      named("dummy")
+    }
+  }
+}
 
 class DnsServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAll with ScalaFutures {
 
   implicit val system: ActorSystem = ActorSystem("ServiceLocatorSpec", ConfigFactory.load())
   implicit val mat: Materializer = ActorMaterializer.create(system)
 
-  val app = new BuiltInComponentsFromContext(ApplicationLoader.createContext(Environment.simple())) with AhcWSComponents with DnsServiceLocatorComponents {
+  val app = new LagomApplication(LagomApplicationContext.Test) with AhcWSComponents with DnsServiceLocatorComponents {
+    override lazy val lagomServer = serverFor[DnsServiceLocatorSpec.DummyService](new DnsServiceLocatorSpec.DummyService())
     override lazy val actorSystem: ActorSystem = system
     override lazy val materializer: Materializer = mat
     override lazy val executionContext: ExecutionContext = actorSystem.dispatcher

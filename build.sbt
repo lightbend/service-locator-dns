@@ -1,6 +1,12 @@
 lazy val root = project
   .in(file("."))
-  .aggregate(serviceLocatorDns, lagom13JavaServiceLocatorDns, lagom13ScalaServiceLocatorDns)
+  .aggregate(
+    serviceLocatorDns,
+    lagom13JavaServiceLocatorDns,
+    lagom13ScalaServiceLocatorDns,
+    lagom14JavaServiceLocatorDns,
+    lagom14ScalaServiceLocatorDns
+  )
 
 lazy val serviceLocatorDns = project
   .in(file("service-locator-dns"))

@@ -23,7 +23,9 @@ object Library {
   val lagom13JavaClient  = "com.lightbend.lagom" %% "lagom-javadsl-client"  % Version.lagom13
   val lagom14JavaClient  = "com.lightbend.lagom" %% "lagom-javadsl-client"  % Version.lagom14
   val lagom13ScalaClient = "com.lightbend.lagom" %% "lagom-scaladsl-client" % Version.lagom13
+  val lagom13ScalaServer = "com.lightbend.lagom" %% "lagom-scaladsl-server" % Version.lagom13
   val lagom14ScalaClient = "com.lightbend.lagom" %% "lagom-scaladsl-client" % Version.lagom14
+  val lagom14ScalaServer = "com.lightbend.lagom" %% "lagom-scaladsl-server" % Version.lagom14
   val scalaTest          = "org.scalatest"       %% "scalatest"             % Version.scalaTest
 }
 

@@ -1,3 +1,5 @@
+import ReleaseTransformations._
+
 val sharedSettings = Seq(
   organization := "com.lightbend",
   organizationName := "Lightbend, Inc.",
@@ -19,7 +21,21 @@ val sharedSettings = Seq(
     else
       Opts.resolver.sonatypeStaging
   ),
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  releaseCrossBuild := false,
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    releaseStepCommandAndRemaining("+test"),
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  )
 )
 
 lazy val root = project

@@ -12,6 +12,10 @@ val sharedSettings = Seq(
     "-language:_",
     "-target:jvm-1.8",
     "-encoding", "UTF-8"),
+  homepage := Some(url("https://www.lightbend.com/")),
+  developers := List(
+    Developer("lightbend", "Lightbend Contributors", "", url("https://github.com/typesafehub/service-locator-dns"))
+  ),
   sonatypeProfileName := "com.lightbend",
   scmInfo := Some(ScmInfo(url("https://github.com/typesafehub/service-locator-dns"), "git@github.com:typesafehub/service-locator-dns.git")),
   scalaVersion := Version.scala211,

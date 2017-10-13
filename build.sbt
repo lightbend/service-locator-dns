@@ -12,7 +12,15 @@ val sharedSettings = Seq(
     "-encoding", "UTF-8"),
   sonatypeProfileName := "com.lightbend",
   scmInfo := Some(ScmInfo(url("https://github.com/typesafehub/service-locator-dns"), "git@github.com:typesafehub/service-locator-dns.git")),
-  scalaVersion := Version.scala211)
+  scalaVersion := Version.scala211,
+  publishTo := Some(
+    if (isSnapshot.value)
+      Opts.resolver.sonatypeSnapshots
+    else
+      Opts.resolver.sonatypeStaging
+  ),
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value
+)
 
 lazy val root = project
   .in(file("."))

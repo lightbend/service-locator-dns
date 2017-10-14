@@ -30,7 +30,7 @@ resolvers += bintrayRepo("hajile", "maven")
 For pure Akka based usage (without Lagom):
 
 ```scala
-libraryDependencies += "com.lightbend" %% "service-locator-dns" % "2.0.0"
+libraryDependencies += "com.lightbend" %% "service-locator-dns" % "2.2.2"
 ```
 
 An example:
@@ -51,7 +51,7 @@ An example:
 Alternatively, when using from Lagom and Java:
 
 ```scala
-libraryDependencies += "com.lightbend" %% "lagom13-java-service-locator-dns" % "2.0.0"
+libraryDependencies += "com.lightbend" %% "lagom13-java-service-locator-dns" % "2.2.2"
 ```
 
 Simply adding the above dependency to a Lagom project should be sufficient. There is a `ServiceLocatorModule` that will be automatically discovered by the Lagom environment. All of your Lagom service locator calls will automatically route via the service locator implementation that this project provides.
@@ -61,7 +61,7 @@ Simply adding the above dependency to a Lagom project should be sufficient. Ther
 Alternatively, when using from Lagom and Scala:
 
 ```scala
-libraryDependencies += "com.lightbend" %% "lagom13-scala-service-locator-dns" % "2.0.0"
+libraryDependencies += "com.lightbend" %% "lagom13-scala-service-locator-dns" % "2.2.2"
 ```
 
 When declaring your Lagom application you will also be required to mix in the `com.lightbend.lagom.scaladsl.dns.DnsServiceLocatorComponents` trait:

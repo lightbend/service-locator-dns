@@ -144,3 +144,7 @@ service-locator-dns {
   resolve-timeout2 = 2 seconds
 }
 ```
+
+## Maintenance
+
+Enterprise Suite Platform Team <es-platform@lightbend.com>

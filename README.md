@@ -1,6 +1,6 @@
 # Service Locator DNS
 
-[![Build Status](https://api.travis-ci.org/typesafehub/service-locator-dns.png?branch=master)](https://travis-ci.org/typesafehub/service-locator-dns)
+[![Build Status](https://api.travis-ci.org/lightbend/service-locator-dns.png?branch=master)](https://travis-ci.org/lightbend/service-locator-dns)
 
 ## Motivation
 

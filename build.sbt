@@ -81,9 +81,15 @@ lazy val lagom14JavaServiceLocatorDns = project
   .dependsOn(serviceLocatorDns % "compile")
   .enablePlugins(AutomateHeaderPlugin)
   .settings(sharedSettings)
+  .settings(
+    crossScalaVersions := Vector(Version.scala211, Version.scala212),
+  )
 
 lazy val lagom14ScalaServiceLocatorDns = project
   .in(file("lagom14-scala-service-locator-dns"))
   .dependsOn(serviceLocatorDns % "compile")
   .enablePlugins(AutomateHeaderPlugin)
   .settings(sharedSettings)
+  .settings(
+    crossScalaVersions := Vector(Version.scala211, Version.scala212),
+  )

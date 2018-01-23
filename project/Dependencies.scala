@@ -6,8 +6,8 @@ object Version {
   // OSS
   val akka = "2.4.20"
   val akkaDns = "2.4.2"
-  val lagom13 = "1.3.7"
-  val lagom14 = "1.4.0-RC1"
+  val lagom13 = "1.3.10"
+  val lagom14 = "1.4.0"
   val scala212 = "2.12.3"
   val scala211 = "2.11.11"
   val scalaTest = "3.0.1"

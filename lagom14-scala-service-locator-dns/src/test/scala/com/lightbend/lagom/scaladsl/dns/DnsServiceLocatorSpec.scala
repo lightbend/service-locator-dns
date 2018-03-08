@@ -28,6 +28,7 @@ import com.lightbend.dns.locator.{ ServiceLocator => ServiceLocatorService }
 import com.lightbend.lagom.internal.client.{ CircuitBreakerConfig, CircuitBreakerMetricsProviderImpl, CircuitBreakers }
 import com.lightbend.lagom.internal.spi.CircuitBreakerMetricsProvider
 import com.lightbend.lagom.scaladsl.api.{ Descriptor, Service }
+import com.lightbend.lagom.scaladsl.client.CircuitBreakersPanel
 import com.lightbend.lagom.scaladsl.server.{ LagomApplication, LagomApplicationContext }
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
@@ -54,9 +55,6 @@ class DnsServiceLocatorSpec extends WordSpec with Matchers with BeforeAndAfterAl
     override lazy val materializer: Materializer = mat
     override lazy val executionContext: ExecutionContext = actorSystem.dispatcher
     override lazy val router: Router = Router.empty
-    override lazy val circuitBreakerMetricsProvider: CircuitBreakerMetricsProvider = new CircuitBreakerMetricsProviderImpl(actorSystem)
-    override lazy val circuitBreakerConfig: CircuitBreakerConfig = new CircuitBreakerConfig(configuration)
-    override lazy val circuitBreakers: CircuitBreakers = new CircuitBreakers(actorSystem, circuitBreakerConfig, circuitBreakerMetricsProvider)
     val dnsServiceLocator = TestProbe()
     override lazy val serviceLocatorService: ActorRef = dnsServiceLocator.ref
   }

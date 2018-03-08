@@ -22,7 +22,7 @@ import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import com.lightbend.lagom.scaladsl.api.Descriptor
 import com.lightbend.dns.locator.{ Settings, ServiceLocator => ServiceLocatorService }
-import com.lightbend.lagom.internal.client.CircuitBreakers
+import com.lightbend.lagom.scaladsl.client.CircuitBreakersPanel
 import com.lightbend.lagom.scaladsl.client.CircuitBreakingServiceLocator
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -33,7 +33,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class DnsServiceLocator(
   serviceLocatorService: ActorRef,
   system: ActorSystem,
-  circuitBreakers: CircuitBreakers,
+  circuitBreakers: CircuitBreakersPanel,
   implicit val ec: ExecutionContext) extends CircuitBreakingServiceLocator(circuitBreakers) {
 
   val settings = Settings(system)

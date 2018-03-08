@@ -28,5 +28,5 @@ trait DnsServiceLocatorComponents extends CircuitBreakerComponents {
     actorSystem.actorOf(ServiceLocatorService.props, ServiceLocatorService.Name)
 
   lazy val serviceLocator: DnsServiceLocator =
-    new DnsServiceLocator(serviceLocatorService, actorSystem, circuitBreakers, executionContext)
+    new DnsServiceLocator(serviceLocatorService, actorSystem, circuitBreakersPanel, executionContext)
 }

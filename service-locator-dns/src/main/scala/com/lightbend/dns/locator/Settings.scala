@@ -46,6 +46,14 @@ class Settings(system: ExtendedActorSystem) extends Extension {
         case (k, v) => k.r -> v.unwrapped().toString
       })
 
+  val externalServices: Map[String, String] =
+    serviceLocatorDns
+      .getObjectList("external-services")
+      .toList
+      .flatMap(x => x.toMap.map {
+        case (k, v) => k -> v.unwrapped().toString
+      }).toMap
+
   val resolveTimeout1: FiniteDuration =
     duration(serviceLocatorDns, "resolve-timeout1")
 

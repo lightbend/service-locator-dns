@@ -16,6 +16,7 @@
 
 package com.lightbend.dns.locator
 
+import java.net.URI
 import java.util.concurrent.ThreadLocalRandom
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
@@ -111,10 +112,20 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
 
   override def receive: Receive = {
     case GetAddress(name) =>
-      resolveSrv(name, resolveOne = true)
+      val externalService = settings.externalServices.get(name)
+      if (externalService.isDefined) {
+        sender() ! Addresses(Seq(uriToServiceAddress(URI.create(externalService.get))))
+      } else {
+        resolveSrv(name, resolveOne = true)
+      }
 
     case GetAddresses(name) =>
-      resolveSrv(name, resolveOne = false)
+      val externalService = settings.externalServices.get(name)
+      if (externalService.isDefined) {
+        sender() ! Addresses(Seq(uriToServiceAddress(URI.create(externalService.get))))
+      } else {
+        resolveSrv(name, resolveOne = false)
+      }
 
     case rc: RequestContext =>
       // When we return just one address then we randomize which of the candidates to return
@@ -147,6 +158,15 @@ class ServiceLocator extends Actor with ActorSettings with ActorLogging {
                 resolved.ipv6.map(host => ServiceAddress(protocol, srv.target, host.getHostAddress, port))
           }
       rc.replyTo ! Addresses(addresses)
+  }
+
+  private def uriToServiceAddress(uri: URI): ServiceAddress = {
+    val port = if (uri.getPort == -1) {
+      if (uri.getScheme.equals("https")) 443
+      else if (uri.getScheme.equals("http")) 80
+      else 80
+    } else uri.getPort
+    ServiceAddress(protocol = uri.getScheme, hostname = uri.getHost, host = uri.getHost, port = port)
   }
 
   private def resolveSrv(name: String, resolveOne: Boolean): Unit = {

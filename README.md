@@ -1,3 +1,10 @@
+# Deprecation notice
+
+This project has been deprecated in favor of Lightbend Orchestration
+
+https://developer.lightbend.com/docs/lightbend-orchestration/latest/index.html
+
+
 # Service Locator DNS
 
 [![Build Status](https://api.travis-ci.org/lightbend/service-locator-dns.png?branch=master)](https://travis-ci.org/lightbend/service-locator-dns)
